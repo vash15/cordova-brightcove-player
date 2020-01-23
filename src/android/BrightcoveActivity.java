@@ -2,15 +2,20 @@ package com.brightcove.player;
 
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 
 import com.brightcove.player.edge.Catalog;
 import com.brightcove.player.edge.VideoListener;
+import com.brightcove.player.event.Event;
 import com.brightcove.player.event.EventEmitter;
+import com.brightcove.player.event.EventListener;
+import com.brightcove.player.event.EventType;
 import com.brightcove.player.model.Video;
 import com.brightcove.player.view.BrightcovePlayer;
 import com.brightcove.player.view.BrightcoveVideoView;
+
 
 public class BrightcoveActivity extends BrightcovePlayer {
 
@@ -23,6 +28,7 @@ public class BrightcoveActivity extends BrightcovePlayer {
         // entering the superclass.
         setContentView(this.getIdFromResources(BRIGHTCOVE_ACTIVITY_NAME, "layout"));
         brightcoveVideoView = (BrightcoveVideoView) findViewById(this.getIdFromResources(BRIGHTCOVE_VIEW_NAME, "id"));
+        brightcoveVideoView.setBackgroundColor(Color.parseColor("#000000"));
 
         super.onCreate(savedInstanceState);
 
@@ -32,7 +38,7 @@ public class BrightcoveActivity extends BrightcovePlayer {
         String brightcoveAccountId = intent.getStringExtra("brightcove-account-id");
         String videoId = intent.getStringExtra("video-id");
 
-        playById(brightcovePolicyKey, brightcoveAccountId, videoId);
+        this.playById(brightcovePolicyKey, brightcoveAccountId, videoId);
     }
 
     @Override
@@ -55,12 +61,41 @@ public class BrightcoveActivity extends BrightcovePlayer {
             public void onVideo(Video video) {
                 brightcoveVideoView.add(video);
                 brightcoveVideoView.start();
+
             }
 
             @Override
             public void onError(String error) {
+
                 Log.e("BrightcoveActivity", error);
+
+                onBackPressed();
+            }
+
+
+        });
+
+        eventEmitter.on(EventType.COMPLETED, new EventListener() {
+            @Override
+            public void processEvent(Event event) {
+                Log.i("BrightcoveActivity", "Video COMPLETED" );
+                // eventEmitter.off();
+                onBackPressed();
             }
         });
+
+        eventEmitter.on(EventType.EXIT_FULL_SCREEN, new EventListener() {
+            @Override
+            public void processEvent(Event event) {
+                Log.i("BrightcoveActivity","EXIT FULL SCREEN");
+                brightcoveVideoView.stopPlayback();
+                onBackPressed();
+            }
+        });
+
+
+        this.fullScreen();
+
     }
+
 }
